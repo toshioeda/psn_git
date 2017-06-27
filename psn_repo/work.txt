@@ -1,0 +1,38 @@
+    double    check_angle=        fabs(b_mesen_a_angle);
+
+
+    //前方に向かってこない人は無視
+    double    a_b_angle=            xfunc_kakudo_pp( a_san->m_now_pos , b_san->m_now_pos , NULL,NULL);    //Ａから見たＢの方向[deg]
+    double    a_mesen_b_angle=    xfunc_angle_pm180( a_b_angle - a_san->m_now_target_angle ) ;    //Ａの進行方向を基準にしたＢの方向[deg]
+    double    closs_angle=        fabs( b_mesen_a_angle + a_mesen_b_angle );                        //角度の合計の絶対値(0-360)[deg]
+    if( closs_angle > 180.0 ) return 0.0;
+
+
+
+
+//----------------------------------------------------------------------------
+//        ファジィ真理値
+//        start_pos以下なら偽（値0)    end_pos以上なら真(値1)
+//----------------------------------------------------------------------------
+double     x_simuA::xfunc_fuzzy_strong( double val , double start_pos , double end_pos )
+{
+    double    strongness=        0;
+    if( start_pos < end_pos ){        //開始が終了より小さい        start_pos____/~~~~~end_pos
+        if( val < start_pos ){
+            strongness=        0 ;
+        }else if( val < end_pos ){
+            strongness=        (val - start_pos) / (end_pos - start_pos);        //0-1の値
+        }else{
+            strongness=        1;
+        }
+    }else{                            //開始が終了より大きい        end_pos~~~~\______start_pos
+        if( val < end_pos ){
+            strongness=        1;
+        }else if( val < start_pos ){
+            strongness=        (start_pos - val) / (start_pos - end_pos);        //0-1の値
+        }else{
+            strongness=        0;
+        }
+    }
+    return strongness;
+}
