@@ -1,18 +1,21 @@
 
+
+//eda
 //------------------------------------------------------------------------------
 //		集団行動シミュレーション実習サンプル
 //●基本的なベースはWindowsのWIN32アプリです。Microsoftが作成して、ウィザードにしてある部分です。
 //	手を加えた部分は //eda　～　//eda end で括ってあります。
 //------------------------------------------------------------------------------
 //	psn.cpp			ウィンドウズメイン関数
-//	x_simuA.cpp		シミュレーター
+//	x_simuA.cpp		シミュレーターＡ
+//	x_simuB.cpp		シミュレーターＢ（メッシュ利用）
 //	x_head.h		共通構造体宣言
 //	x_function.h	共通関数
 //------------------------------------------------------------------------------
-//	x_mesh.cpp		メッシュ制御サンプル(この実行には関与しない)
+//	x_mesh.cpp		メッシュ制御サンプル(x_simuBで使用)
 //	その他はマイクロソフトが標準で容易するファイル
 //------------------------------------------------------------------------------
-
+//eda end
 
 //------------------------------------------------------------------------------
 //		Windowsの標準インクルードヘッダーファイル
@@ -40,18 +43,15 @@
 		//	プリコンパイル済ヘッダー(strafx)は使用しない。
 		//		使っても実害はほとんど出ませんが、使う必要もないので、このプロジェクトからは削除しています。
 //------------------------------------------------------------------------------
-#include <stdio.h>			//標準入出力
-#include <math.h>			//fabs()など数学系関数等
 //
 //------------------------------------------------------------------------------
 //		作成して追加したインクルードファイル
 //------------------------------------------------------------------------------
-#include	"x_head.h"
-#include	"x_functions.h"
-#include	"x_simuA.h"
-#include	"x_simuB.h"
-#include	"psn.h"
-#pragma warning(disable : 4996)						//VS2013以降の安全な関数以降への催促警告を無効にする
+#include	"x_functions.h"				//個人の標準関数とCの標準的宣言
+#include	"x_simuA.h"					//シミュレーター
+#include	"x_simuB.h"					//シミュレーター
+#include	"psn_main.h"						//このメインプログラム
+#pragma warning(disable : 4996)			//VS2013以降の安全な関数以降への催促警告を無効にする
 
 //------------------------------------------------------------------------------
 //		スーパータイマー
@@ -72,8 +72,11 @@ void	CALLBACK	main_Super_OnTimeProc( UINT uID , UINT uMsg , DWORD dwUser , DWORD
 //		グローバル変数
 //-----------------------------------------------------------------------------
 HWND			g_main_hWnd;	//ウィンドウハンドル
-x_simuB*		g_simu;			//このクラスにプログラムする
-//x_simuA*		g_simu;			//このクラスにプログラムする
+#ifdef  cdef_MESH_METHOD
+x_simuB*		g_simu;			//メッシュ利用シミュレーション
+#else
+x_simuA*		g_simu;			//メッシュなしシミュレーション
+#endif
 //----------------------------------------------------------------------
 //eda end
 
@@ -113,8 +116,11 @@ int APIENTRY _tWinMain( HINSTANCE hInstance , HINSTANCE hPrevInstance , LPTSTR l
 
 
 //eda
-	g_simu=				new x_simuB();							//シミュレーションクラスを生成
-//	g_simu=				new x_simuA();							//シミュレーションクラスを生成
+#ifdef  cdef_MESH_METHOD
+	g_simu=				new x_simuB();							//シミュレーションクラスを生成	//main
+#else
+	g_simu=				new x_simuA();							//シミュレーションクラスを生成	//main
+#endif
 	g_simu->m_hwnd=		g_main_hWnd;							//ウインドウハンドルを伝える
 	//
 	MoveWindow( g_simu->m_hwnd , 0 , 0 , (long)( g_simu->m_field_length * g_simu->m_disp_ratio ) , (long)( g_simu->m_field_length / 1.6 * g_simu->m_disp_ratio ) , TRUE );		//最初のウィンドウ
@@ -307,8 +313,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			long	old_vector_sw=			g_simu->m_disp_vector_sw;		//方向ベクトル表示、非表示を記録
 			delete g_simu;												//シミュレーションクラス破棄
 //			xfunc_randomize();											//乱数設定(未使用)
-			g_simu=							new x_simuB();					//メッシュ付きシミュレーションクラスを生成
-//			g_simu=							new x_simuA();					//シミュレーションクラスを生成
+#ifdef cdef_MESH_METHOD
+			g_simu=							new x_simuB();					//メッシュ付きシミュレーションクラスを生成		//restart
+#else
+			g_simu=							new x_simuA();					//シミュレーションクラスを生成		//restart
+#endif
 			g_simu->m_hwnd=					g_main_hWnd;					//ウインドウハンドルを伝える
 			g_simu->m_disp_vector_sw=		old_vector_sw;				//方向ベクトル表示、非表示の復活
 			//窓サイズ変更時の処理と同じ処理をする

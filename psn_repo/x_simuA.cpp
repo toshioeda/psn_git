@@ -7,12 +7,9 @@
 //● 人格設定項目です。
 //
 #include <Windows.h>
-#include <stdio.h>
-#include <math.h>
 //
-#include "x_head.h"
-#include "x_functions.h"
-#include "x_simuA.h"
+#include	"x_functions.h"			//個人の標準関数
+#include	"x_simuA.h"
 //
 #pragma warning(disable : 4996)			//古いタイプの関数を使うと出て来る注意を止めさせる宣言文。
 
@@ -25,9 +22,9 @@ x_simuA::x_simuA()
 {
 
 	//設定するもの
-	m_field_width=			1;				//☆	//初期配置幅[m]
-	m_field_length=			20;				//☆	//フィールドの長さ[m]	(人はこのフィールドの左右に幅いっぱいに集まります)
-	m_man_max=				60;				//☆	//人の全体人数[psn]
+	m_field_width=			chead_FIELD_WIDTH;			//☆	//初期配置幅[m]
+	m_field_length=			chead_FIELD_LENGTH;			//☆	//フィールドの長さ[m]	(人はこのフィールドの左右に幅いっぱいに集まります)
+	m_man_max=				chead_NINZUU;				//☆	//人の全体人数[psn]
 	//
 	
 	//シミュレーション制御変数
@@ -175,7 +172,7 @@ void	x_simuA::disp_simu()
 	//状況文字列の表示
 	double	cal_sokudo=			m_genzai_jikoku_sec * 1000.0 / (double)( timeGetTime() - m_simu_start_time - m_simu_tyuudann_time );		//計算速度
 	char	wwc[200];
-	sprintf( wwc , "  %6.1f[秒](%5.1f倍)%5.3f[秒/ステップ] %d[人] W:ベクトル　S:停止/再開　R:初めから" , m_genzai_jikoku_sec , cal_sokudo , mf_cal_interval , m_man_max );	//経過時間と人数
+	sprintf( wwc , "A %6.1f[秒](%5.3f倍)%5.3f[秒/ステップ] %d[人] W:ベクトル　S:停止/再開　R:初めから" , m_genzai_jikoku_sec , cal_sokudo , mf_cal_interval , m_man_max );	//経過時間と人数
 	xfunc_print_text( m_Mem_hdc , wwc , 0 , 0 , 32 , RGB(255,255,255) , "ＭＳ ゴシック" , -1, 0.0 , 0 );
 	
 	//裏で書いたビットマップを表に転送

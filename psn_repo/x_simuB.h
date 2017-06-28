@@ -3,6 +3,7 @@
 //人を生成したり動かしたりするメインのクラス宣言
 //------------------------------------------------------------------------------
 
+#include	"x_mesh.h"				//メッシュ制御クラス
 
 class x_simuB
 {
@@ -50,6 +51,16 @@ long	x_simuB::disp_man_one( HDC hdc , long index );											//一人描画
 long	x_simuB::next_step_all();																//全員の次のステップを計算
 long	x_simuB::next_step_one( long index );													//一人の次のステップを計算
 long	x_simuB::check_next_position( long index );												//次の位置に移動可能かどうかを探る
+
+
+
+
+
+public:
+x_mesh*		m_xmesh;
+
+public:
+void	x_simuB::set_mesh_all();																	//メッシュ生成
 
 
 };

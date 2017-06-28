@@ -7,12 +7,9 @@
 //● 人格設定項目です。
 //
 #include <Windows.h>
-#include <stdio.h>
-#include <math.h>
 //
-#include "x_head.h"
-#include "x_functions.h"
-#include "x_simuB.h"
+#include	"x_functions.h"			//個人の標準関数
+#include	"x_simuB.h"				//このクラス
 //
 #pragma warning(disable : 4996)			//古いタイプの関数を使うと出て来る注意を止めさせる宣言文。
 
@@ -25,9 +22,9 @@ x_simuB::x_simuB()
 {
 
 	//設定するもの
-	m_field_width=			1;				//☆	//初期配置幅[m]
-	m_field_length=			20;				//☆	//フィールドの長さ[m]	(人はこのフィールドの左右に幅いっぱいに集まります)
-	m_man_max=				60;				//☆	//人の全体人数[psn]
+	m_field_width=			chead_FIELD_WIDTH;			//☆	//初期配置幅[m]
+	m_field_length=			chead_FIELD_LENGTH;			//☆	//フィールドの長さ[m]	(人はこのフィールドの左右に幅いっぱいに集まります)
+	m_man_max=				chead_NINZUU;				//☆	//人の全体人数[psn]
 	//
 	
 	//シミュレーション制御変数
@@ -51,7 +48,8 @@ x_simuB::x_simuB()
 	m_man_ptr=				(S_MAN*)calloc( m_man_max , sizeof( S_MAN ) );		//各人の属性（人数分確保する）
 	//全員のループ
 	for(long nn=0;nn<m_man_max;nn++){
-		S_MAN*	pman=	&m_man_ptr[nn];					//n番目の人クラスの人のポインタ
+		S_MAN*	pman=	&m_man_ptr[nn];				//n番目の人クラスの人のポインタ
+		pman->m_mesh_heya_bangou=	-1;				//メッシュに属していない
 		//ファジィー　強度
 		pman->body_haba=			0.2;			//●人の半径[m]
 		pman->m_walk_speed=			1.0;			//●歩行速度[m/s]
@@ -120,6 +118,10 @@ x_simuB::x_simuB()
 		xfunc_unit_vect_pp( pman->m_now_pos , pman->m_now_target_pos , &pman->m_now_target_dir );		//最初の進行方向（単位ベクトル）
 		pman->m_now_target_angle=		xfunc_kakudo( 0,0 , pman->m_now_target_dir.x , pman->m_now_target_dir.y , NULL , NULL );							//進行方向角度[deg]
 	}
+
+
+	set_mesh_all();				//メッシュの生成
+
 }
 
 
@@ -129,9 +131,10 @@ x_simuB::x_simuB()
 x_simuB::~x_simuB()
 {
 	free( m_man_ptr );							//各人の属性の破棄
+
+	delete	m_xmesh;							//メッシュの破棄
+
 }
-
-
 
 
 //------------------------------------------------------------------------------
@@ -175,7 +178,7 @@ void	x_simuB::disp_simu()
 	//状況文字列の表示
 	double	cal_sokudo=			m_genzai_jikoku_sec * 1000.0 / (double)( timeGetTime() - m_simu_start_time - m_simu_tyuudann_time );		//計算速度
 	char	wwc[200];
-	sprintf( wwc , "  %6.1f[秒](%5.1f倍)%5.3f[秒/ステップ] %d[人] W:ベクトル　S:停止/再開　R:初めから" , m_genzai_jikoku_sec , cal_sokudo , mf_cal_interval , m_man_max );	//経過時間と人数
+	sprintf( wwc , "B %6.1f[秒](%5.3f倍)%5.3f[秒/ステップ] %d[人] W:ベクトル　S:停止/再開　R:初めから" , m_genzai_jikoku_sec , cal_sokudo , mf_cal_interval , m_man_max );	//経過時間と人数
 	xfunc_print_text( m_Mem_hdc , wwc , 0 , 0 , 32 , RGB(255,255,255) , "ＭＳ ゴシック" , -1, 0.0 , 0 );
 	
 	//裏で書いたビットマップを表に転送
@@ -326,8 +329,15 @@ long x_simuB::next_step_one( long index )
 			}
 		}
 	}
-	//
-	p_man->m_now_pos=				p_man->m_now_pos + p_man->m_next_dir * p_man->m_walk_speed * mf_cal_interval;		//次のステップの地点に移動
+	//メッシュ操作
+	p_man->m_mesh_heya_bangou=		m_xmesh->out_mesh_real( p_man->m_now_pos , p_man->m_mesh_heya_bangou );				//メッシュから離脱
+	dPOINT	next_pos=				p_man->m_now_pos + p_man->m_next_dir * p_man->m_walk_speed * mf_cal_interval;		//次のステップの地点
+	p_man->m_now_pos=				next_pos;																			//次のステップの地点に移動
+	p_man->m_mesh_heya_bangou=		m_xmesh->into_mesh_real( p_man->m_now_pos , index );								//メッシュに加入
+
+
+
+
 	//移動後の目的ポイント方向の更新
 	xfunc_unit_vect_pp( p_man->m_now_pos , p_man->m_now_target_pos , &p_man->m_now_target_dir );		//最初の進行方向（単位ベクトル）
 	p_man->m_now_target_angle=		xfunc_kakudo( 0,0 , p_man->m_now_target_dir.x , p_man->m_now_target_dir.y , NULL , NULL );															//進行方向角度[deg]
@@ -344,17 +354,27 @@ long	x_simuB::check_next_position( long index )
 	S_MAN*	a_san=		&m_man_ptr[index];
 	dPOINT	next_pos=	a_san->m_now_pos + a_san->m_next_dir * a_san->m_walk_speed * mf_cal_interval;		//次の位置
 	long	over_sw=	TRUE;
-	for(long ii=0;ii<m_man_max;ii++){												//全員をチェック
-		if( ii == index ) continue;													//自分は無視
-		S_MAN* b_san=			&m_man_ptr[ii];
-		double	next_dist=		xfunc_dist_pp( b_san->m_now_pos , next_pos );			//次の距離[m]
-		if( next_dist > ( a_san->body_haba + b_san->body_haba ) ) continue;			//接触しない
-		//
-		double	now_dist=		xfunc_dist_pp( b_san->m_now_pos , a_san->m_now_pos );	//現在の距離[m]
-		if( next_dist > now_dist ) continue;										//接触していても遠ざかる方向へは移動を許す
-		//
-		over_sw=		FALSE;														//移動はできない
-		break;
+
+	POINT	a_mesh=		m_xmesh->real_to_mesh_index( a_san->m_now_pos );		//Aさんのメッシュインデックス
+
+	//前後左右
+	for(long jj=a_mesh.y-1;jj<=a_mesh.y+1;jj++){
+	for(long ii=a_mesh.x-1;ii<=a_mesh.x+1;ii++){
+		S_MESH_IMAGE*	mesh_ptr=			&m_xmesh->m_psn_mesh_jjii[jj][ii];				//メッシュ[jj][ii]の記録アドレス
+		for(long nn=0;nn<mesh_ptr->kashi_max;nn++){												//メッシュ内の全員をチェック
+			long	man_index=		mesh_ptr->kashi_heya[nn];									//住人の番号
+			if( man_index < 0 || man_index == index ) continue;													//自分は無視
+			S_MAN* b_san=			&m_man_ptr[man_index];
+			double	next_dist=		xfunc_dist_pp( b_san->m_now_pos , next_pos );			//次の距離[m]
+			if( next_dist > ( a_san->body_haba + b_san->body_haba ) ) continue;				//接触しない
+			//
+			double	now_dist=		xfunc_dist_pp( b_san->m_now_pos , a_san->m_now_pos );	//現在の距離[m]
+			if( next_dist > now_dist ) continue;											//接触していても遠ざかる方向へは移動を許す
+			//
+			over_sw=		FALSE;															//移動はできない
+			break;
+		}
+	}
 	}
 	return over_sw;
 }
@@ -381,38 +401,47 @@ long	x_simuB::make_fuzzy_new_vector( long index )
 	//ファジィー数
 	dPOINT	sum_fuzzy_dd=			{0.0,0.0};		//ファジィ推論の結果を合計するための変数
 	long	sum_man=				0;				//影響を受けた人数
-	//
-	for(long ii=0;ii<m_man_max;ii++){																//★全員をチェック
-		if( ii == index ) continue;																	//自分は無視する
-		//
-		S_MAN* b_san=		&m_man_ptr[ii];															//相手（Ｂさん）の属性の構造体ポインタ
-		//前方に居ない人は無視
-		double	a_b_angle=			xfunc_kakudo( a_san->m_now_pos.x , a_san->m_now_pos.y , b_san->m_now_pos.x , b_san->m_now_pos.y , NULL,NULL);	//Ａから見たＢの方向[deg]
-		double	a_mesen_b_angle=	xfunc_angle_pm180( a_b_angle - a_san->m_now_target_angle ) ;	//Ａの進行方向を基準にしたＢの方向[deg]
-		if( fabs( a_mesen_b_angle ) > a_san->m_zenpou_angle ) continue ;							//▲前方に居ない人は視界に入らないとして無視する
 
-		//影響を推測
-		double	fuzzy_v=			fuzzy_suiron( index , ii );										//ファジィ推論
-		if( fuzzy_v <= 0.0 ) continue;																//影響のない人は無視
-		//
-		sum_man++;																					//影響した人数
-		//ファジィによる回避強度の集計(考え方でいろいろ出来る)ここでは目的方向に対し直交する方向に作用すると考える。
-		{
-			//避ける向き　自分の向きと直行方向
-			double	aite_side=	a_mesen_b_angle ;													//進行方向を基準にした相手方向
-			double	fuzzy_angle ;
-			if( aite_side > 0.0 ){																	//相手は左側にいる
-				fuzzy_angle=	xfunc_angle360( a_san->m_now_target_angle - 90.0 );					//右側に逃げる
-			}else{																					//相手は右側にいる
-				fuzzy_angle=	xfunc_angle360( a_san->m_now_target_angle + 90.0 );					//左側に逃げる
+	POINT	a_mesh=		m_xmesh->real_to_mesh_index( a_san->m_now_pos );		//Aさんのメッシュインデックス
+
+	//前後左右
+	for(long jj=a_mesh.y-2;jj<=a_mesh.y+2;jj++){
+	for(long ii=a_mesh.x-2;ii<=a_mesh.x+2;ii++){
+		S_MESH_IMAGE*	mesh_ptr=			&m_xmesh->m_psn_mesh_jjii[jj][ii];				//メッシュ[jj][ii]の記録アドレス
+		for(long nn=0;nn<mesh_ptr->kashi_max;nn++){												//メッシュ内の全員をチェック
+			long	man_index=		mesh_ptr->kashi_heya[nn];									//住人の番号
+			if( man_index < 0 || man_index == index ) continue;													//自分は無視
+			//
+			S_MAN* b_san=		&m_man_ptr[man_index];															//相手（Ｂさん）の属性の構造体ポインタ
+			//前方に居ない人は無視
+			double	a_b_angle=			xfunc_kakudo( a_san->m_now_pos.x , a_san->m_now_pos.y , b_san->m_now_pos.x , b_san->m_now_pos.y , NULL,NULL);	//Ａから見たＢの方向[deg]
+			double	a_mesen_b_angle=	xfunc_angle_pm180( a_b_angle - a_san->m_now_target_angle ) ;	//Ａの進行方向を基準にしたＢの方向[deg]
+			if( fabs( a_mesen_b_angle ) > a_san->m_zenpou_angle ) continue ;							//▲前方に居ない人は視界に入らないとして無視する
+
+			//影響を推測
+			double	fuzzy_v=			fuzzy_suiron( index , man_index );										//ファジィ推論
+			if( fuzzy_v <= 0.0 ) continue;																//影響のない人は無視
+			//
+			sum_man++;																					//影響した人数
+			//ファジィによる回避強度の集計(考え方でいろいろ出来る)ここでは目的方向に対し直交する方向に作用すると考える。
+			{
+				//避ける向き　自分の向きと直行方向
+				double	aite_side=	a_mesen_b_angle ;													//進行方向を基準にした相手方向
+				double	fuzzy_angle ;
+				if( aite_side > 0.0 ){																	//相手は左側にいる
+					fuzzy_angle=	xfunc_angle360( a_san->m_now_target_angle - 90.0 );					//右側に逃げる
+				}else{																					//相手は右側にいる
+					fuzzy_angle=	xfunc_angle360( a_san->m_now_target_angle + 90.0 );					//左側に逃げる
+				}
+				//ＸＹ成分で記録（aite_sideで正負を決めてfuzzy_vを合計しておいて最後にsum_fuzzy_ddを計算しても同じ）
+				double fuzzy_dx=		fuzzy_v * cos( fuzzy_angle / 180.0 * u_PAI );
+				double fuzzy_dy=		fuzzy_v * sin( fuzzy_angle / 180.0 * u_PAI );
+				sum_fuzzy_dd.x+=		fuzzy_dx;
+				sum_fuzzy_dd.y+=		fuzzy_dy;
+
 			}
-			//ＸＹ成分で記録（aite_sideで正負を決めてfuzzy_vを合計しておいて最後にsum_fuzzy_ddを計算しても同じ）
-			double fuzzy_dx=		fuzzy_v * cos( fuzzy_angle / 180.0 * u_PAI );
-			double fuzzy_dy=		fuzzy_v * sin( fuzzy_angle / 180.0 * u_PAI );
-			sum_fuzzy_dd.x+=		fuzzy_dx;
-			sum_fuzzy_dd.y+=		fuzzy_dy;
-
 		}
+	}
 	}
 	//
 	if( sum_man > 0 ){								//周囲に影響する人が居た場合（進行方向に直行するベクトルになる）
@@ -506,3 +535,40 @@ double	 x_simuB::xfunc_fuzzy_strong( double val , double start_pos , double end_
 	return strongness;
 }
 
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//		メッシュ利用関数群
+//------------------------------------------------------------------------------
+//		メッシュ利用宣言
+//------------------------------------------------------------------------------
+void	x_simuB::set_mesh_all()
+{
+	//行動範囲の特定
+	dPOINT	xpos[2];						//人の位置の[0]最大 [1]最少
+	xpos[0]=		1e10;
+	xpos[1]=		-1e10;
+	for(long nn=0;nn<m_man_max;nn++){
+		S_MAN*	pman=	&m_man_ptr[nn];					//n番目の人クラスの人のポインタ
+		xpos[0].x=		min( xpos[0].x , pman->m_now_pos.x );
+		xpos[0].y=		min( xpos[0].y , pman->m_now_pos.y );
+		xpos[1].x=		max( xpos[1].x , pman->m_now_pos.x );
+		xpos[1].y=		max( xpos[1].y , pman->m_now_pos.y );
+	}
+
+	//メッシュ生成
+	m_xmesh=		new x_mesh();
+	//周囲に余裕を持たす
+	m_xmesh->m_origin=			( xpos[0].x - 100.0 );			//メッシュ原点座標[m]		//100mの余裕
+	m_xmesh->m_mesh_width=		2.0;							//メッシュ幅[m]				//メッシュ幅を2.0[m]に設定
+	dPOINT	w_size=				( (xpos[1] - xpos[0]) + 100.0 * 2.0 ) / m_xmesh->m_mesh_width;
+	m_xmesh->creat_mesh( (long)( w_size.x + 1.0 ) , (long)( w_size.y + 1.0 ) );				//メッシュ数
+
+
+	//メッシュに登録
+	for(long nn=0;nn<m_man_max;nn++){
+		S_MAN*	pman=	&m_man_ptr[nn];					//n番目の人クラスの人のポインタ
+		pman->m_mesh_heya_bangou=			m_xmesh->into_mesh_real( pman->m_now_pos , nn );				//メッシュに登録。登録メッシュを記録。
+	}
+
+}

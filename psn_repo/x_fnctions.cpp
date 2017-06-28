@@ -2,10 +2,8 @@
 //		基本関数パック
 //------------------------------------------------------------------------------
 #include <Windows.h>
-#include <math.h>
 //
-#include "x_head.h"
-#include "x_functions.h"
+#include	"x_functions.h"			//個人の標準関数
 //
 #pragma warning(disable : 4996)
 

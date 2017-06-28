@@ -2,9 +2,22 @@
 
 
 //------------------------------------------------------------------------------
+//		特別にシミュレーション条件をここで定義する
+//		普通は可搬性を考えて、ここでは定義しない
+//------------------------------------------------------------------------------
+#define cdef_MESH_METHOD			//メッシュ利用のプログラムにする時の宣言
+#undef cdef_MESH_METHOD				//この行を有効にするとA　　コメントアウトでB（メッシュ利用）のシミュレーションになる
+
+#define		chead_NINZUU			160			//☆　計算人数[psn]
+#define		chead_FIELD_LENGTH		20			//☆　フィールド長さ[m]
+#define		chead_FIELD_WIDTH		1			//☆　初期配置幅[m]
+
+
+
+//------------------------------------------------------------------------------
 //	全体に共通する宣言
 //------------------------------------------------------------------------------
-#define		u_PAI	3.14159265358979
+#define		u_PAI					3.14159265358979
 
 
 //------------------------------------------------------------------------------
@@ -13,22 +26,20 @@
 typedef struct	s_dPOINT{
 	BOOL operator == ( s_dPOINT ) ;			//equequ
 	s_dPOINT operator = ( double );			//equdouble
+	s_dPOINT operator + ( double );			//plusdouble
+	s_dPOINT operator - ( double );			//mainusdouble
+	s_dPOINT operator * ( double );			//times
+	s_dPOINT operator / ( double );			//waru
+
+
+
 	s_dPOINT operator - ( s_dPOINT );		//dpointmainasudpoint
 	s_dPOINT operator + ( s_dPOINT );		//pluspoint
-	s_dPOINT operator * ( double );			//times
 	s_dPOINT operator * ( s_dPOINT );		//timestimes
 	double	x ;
 	double	y ;
 } dPOINT ;
 
-inline	BOOL dPOINT::operator == ( dPOINT dp )			//equequ
-{
-	double	lv	= 0.000000001 ;
-	if( fabs(x - dp.x )<lv && fabs(y - dp.y )<lv ){
-		return TRUE ;
-	}
-	return FALSE ;
-};
 
 inline	dPOINT dPOINT::operator = ( double vv )		//equdouble
 {
@@ -37,6 +48,47 @@ inline	dPOINT dPOINT::operator = ( double vv )		//equdouble
 	y=	ansd.y=		vv ;
 	return ansd ;
 };
+inline	dPOINT dPOINT::operator + ( double vv )		//plusdouble
+{
+	dPOINT	ansd ;
+	ansd.x=		x + vv ; 
+	ansd.y=		y + vv ;
+	return ansd ;
+};
+inline	dPOINT dPOINT::operator - ( double vv )		//mainusdouble
+{
+	dPOINT	ansd ;
+	ansd.x=		x - vv ; 
+	ansd.y=		y - vv ;
+	return ansd ;
+};
+
+inline	dPOINT dPOINT::operator * ( double vv )		//times
+{
+	dPOINT	ansd ;
+	ansd.x=		x * vv; 
+	ansd.y=		y * vv;
+	return ansd;
+};
+inline	dPOINT dPOINT::operator / ( double vv )		//waru
+{
+	dPOINT	ansd ;
+	ansd.x=		x / vv; 
+	ansd.y=		y / vv;
+	return ansd;
+};
+
+
+
+inline	BOOL dPOINT::operator == ( dPOINT dp )			//equequ
+{
+	double	lv=			0.000000001 ;
+	if( fabs(x - dp.x )<lv && fabs(y - dp.y )<lv ){
+		return TRUE ;
+	}
+	return FALSE ;
+};
+
 
 inline	dPOINT dPOINT::operator - ( dPOINT dp )		//dpointmainasudpoint
 {
@@ -54,13 +106,6 @@ inline	dPOINT dPOINT::operator + ( dPOINT dp )	//pluspoint
 	return ansd ;
 };
 
-inline	dPOINT dPOINT::operator * ( double vv )		//times
-{
-	dPOINT	ansd ;
-	ansd.x=		x * vv; 
-	ansd.y=		y * vv;
-	return ansd;
-};
 
 inline	dPOINT dPOINT::operator * ( dPOINT dp )		//timestimes
 {
@@ -101,6 +146,11 @@ typedef struct s_man{
 //位置情報
 	dPOINT	m_now_pos;				//現在位置
 	dPOINT	m_now_target_pos;		//目的位置
+
+
+	long	m_mesh_heya_bangou;		//メッシュの登録インデックス
+
+
 //計算結果
 	dPOINT	m_now_target_dir;		//目的位置の方向(単位ベクトル)
 	double	m_now_target_angle;		//目的方向の角度[deg]

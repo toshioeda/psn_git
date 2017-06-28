@@ -70,14 +70,14 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="x_functions.h" />
-    <ClInclude Include="psn.h" />
+    <ClInclude Include="psn_main.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="x_mesh.h" />
     <ClInclude Include="x_simuA.h" />
@@ -87,7 +87,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="x_fnctions.cpp" />
-    <ClCompile Include="psn.cpp" />
+    <ClCompile Include="psn_main.cpp" />
     <ClCompile Include="x_mesh.cpp" />
     <ClCompile Include="x_simuA.cpp" />
     <ClCompile Include="x_simuB.cpp" />
