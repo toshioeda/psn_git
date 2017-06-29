@@ -40,7 +40,7 @@ x_simuB::x_simuB()
 	HWND	desktop_hwnd=	GetDesktopWindow();			//デスクトップのウインドウハンドル
 	RECT	rect;
 	GetClientRect( desktop_hwnd , &rect );				//ウィンドウの描画範囲のサイズ取得
-	m_disp_ratio=			( rect.right - rect.left ) * 0.7 / m_field_length ;
+	m_disp_ratio=			( rect.right - rect.left ) * 0.95 / m_field_length ;
 	m_disp_offset_y=		( rect.bottom - rect.top ) / 2 ;
 
 	//各人の属性をセット
@@ -332,9 +332,13 @@ long x_simuB::next_step_one( long index )
 	//メッシュ操作
 	p_man->m_mesh_heya_bangou=		m_xmesh->out_mesh_real( p_man->m_now_pos , p_man->m_mesh_heya_bangou );				//メッシュから離脱
 	dPOINT	next_pos=				p_man->m_now_pos + p_man->m_next_dir * p_man->m_walk_speed * mf_cal_interval;		//次のステップの地点
-	p_man->m_now_pos=				next_pos;																			//次のステップの地点に移動
-	p_man->m_mesh_heya_bangou=		m_xmesh->into_mesh_real( p_man->m_now_pos , index );								//メッシュに加入
-
+	p_man->m_mesh_heya_bangou=		m_xmesh->into_mesh_real( next_pos , index );										//メッシュに加入
+	if( p_man->m_mesh_heya_bangou >= 0 ){																				//メッシュに加入出来たら移動する
+		p_man->m_now_pos=		next_pos;
+	}else{
+		p_man->m_mesh_heya_bangou=		m_xmesh->into_mesh_real(  p_man->m_now_pos , index );							//元のメッシュに加入
+		return FALSE;
+	}
 
 
 

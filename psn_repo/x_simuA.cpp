@@ -40,7 +40,7 @@ x_simuA::x_simuA()
 	HWND	desktop_hwnd=	GetDesktopWindow();			//デスクトップのウインドウハンドル
 	RECT	rect;
 	GetClientRect( desktop_hwnd , &rect );				//ウィンドウの描画範囲のサイズ取得
-	m_disp_ratio=			( rect.right - rect.left ) * 0.7 / m_field_length ;
+	m_disp_ratio=			( rect.right - rect.left ) * 0.95 / m_field_length ;				//20170629
 	m_disp_offset_y=		( rect.bottom - rect.top ) / 2 ;
 
 	//各人の属性をセット

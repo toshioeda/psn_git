@@ -64,6 +64,10 @@ POINT x_mesh::real_to_mesh_index( dPOINT pos )
 	POINT	ipos;
 	ipos.x=		(long)( ( pos.x - m_origin.x ) / m_mesh_width );
 	ipos.y=		(long)( ( pos.y - m_origin.y ) / m_mesh_width );
+	//
+	if( ipos.x < 0 || ipos.x >= m_psn_mesh_size.x ) ipos.x=		-1;
+	if( ipos.y < 0 || ipos.y >= m_psn_mesh_size.y ) ipos.y=		-1;
+
 	return ipos;
 }
 

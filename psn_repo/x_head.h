@@ -6,9 +6,9 @@
 //		普通は可搬性を考えて、ここでは定義しない
 //------------------------------------------------------------------------------
 #define cdef_MESH_METHOD			//メッシュ利用のプログラムにする時の宣言
-#undef cdef_MESH_METHOD				//この行を有効にするとA　　コメントアウトでB（メッシュ利用）のシミュレーションになる
+//		#undef cdef_MESH_METHOD				//この行を有効にするとA　　コメントアウトでB（メッシュ利用）のシミュレーションになる
 
-#define		chead_NINZUU			160			//☆　計算人数[psn]
+#define		chead_NINZUU			1160			//☆　計算人数[psn]
 #define		chead_FIELD_LENGTH		20			//☆　フィールド長さ[m]
 #define		chead_FIELD_WIDTH		1			//☆　初期配置幅[m]
 
